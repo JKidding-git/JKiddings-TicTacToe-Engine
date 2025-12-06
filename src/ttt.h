@@ -1,6 +1,6 @@
 #ifndef TTT_H // XYyJCQAwCANX6Qi5%2FZczPhVakXL1QoQE4uTrGfBe8CW%2FHl8qUqrkq5xd6J7OfIUNq7JpFAQ%3D
 #define TTT_H // Decoded: Made By JKidding
-
+#include <stdbool.h>
 #include <stdio.h>
 #include <math.h>
 #define TTT_NODE_SIZE 19683 // 3^9 possible board states, each cell can be empty, X, or O (maybe also illegal states, but whatever. I only have 100 lines to work with)
@@ -10,41 +10,41 @@ int board                = 0b000000000;                // 9 bits for 9 cells
 int player[2]            = {0b000000000, 0b000000000}; // Player X and O boards
 enum {X, O} current_player = X;                        // X starts first, that one is obvious.
 
-// Places a mark at position "i" (0-8) (I is Index)
-static inline int place(int i) { 
-    if ((board & (1 << i)) == 0 && i >= 0 && i < 9) {
-        player[current_player] |= (1 << i);
-        board |= (1 << i);
+// Places a mark at the index's position (0-8), returns true if successful, false if illegal move. 
+static inline bool place(int index) { 
+    if ((board & (1 << index)) == 0 && index >= 0 && index < 9) {
+        player[current_player] |= (1 << index);
+        board |= (1 << index);
         current_player = (current_player == X) ? O : X; // Switch player
-        return 1; // true
+        return true;
     }
-    return 0; // false
+    return false;
 }
 
-// Removes a mark from position "i" (0-8), could be useful for backtracking for a game tree search. (I is Index)
-static inline int unplace(int i) {
-    if (board & (1 << i) && i >= 0 && i < 9) {
+// Removes a mark from position "index" (0-8), could be useful for backtracking for a game tree search.
+static inline bool unplace(int index) {
+    if (board & (1 << index) && index >= 0 && index < 9) {
         current_player = (current_player == X) ? O : X; // Switch back
-        player[current_player] &= ~(1 << i);
-        board &= ~(1 << i);
-        return 1; // true
+        player[current_player] &= ~(1 << index);
+        board &= ~(1 << index);
+        return true;
     }
-    return 0; // false
+    return false;
 }
 
 // If all of the cells are filled, it's a draw. Obviously lmao
-static inline int is_Draw() { return board == 0b111111111; } 
+static inline bool is_Draw() { return board == 0b111111111; }
 
-// Checks if the given player has won (P is player[X] or player[O])
-static inline int is_winner(int p) {
+// Checks if the given player has won
+static inline bool is_winner(int players_board) {
     // Check all winning combinations using bitmasks
     const int win_masks[8] = {0b111000000, 0b000111000, 0b000000111, 0b100100100, 0b010010010, 0b001001001, 0b100010001, 0b001010100};
     for (int i = 0; i < 8; i++) {
-        if ((p & win_masks[i]) == win_masks[i]) {
-            return 1; // true
+        if ((players_board & win_masks[i]) == win_masks[i]) {
+            return true;
         }
     }
-    return 0; // false
+    return false;
 }
 
 // Encodes the current board state into a unique integer (0-19682) Useful for either hashing, or a table lookup.
@@ -60,7 +60,7 @@ int encode_board() {
 }
 
 // Decodes an integer (0-19682) back into the board state, could be used for loading data up from a table.
-int decode_board(int encoded) {
+bool decode_board(int encoded) {
     board = 0;
     player[X] = 0;
     player[O] = 0;
@@ -74,7 +74,7 @@ int decode_board(int encoded) {
             board |= (1 << i);
         }
     }
-    return 1; // success
+    return true; // success
 }
 
 // Prints the current board state
