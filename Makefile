@@ -1,0 +1,37 @@
+# Portable Makefile — works on Linux, macOS, Windows (make under MSYS/MinGW/Cygwin)
+CC ?= gcc
+CFLAGS ?= -O2
+
+# Detect OS to set executable extension and add aggressive flags on Unix-like systems
+ifeq ($(OS),Windows_NT)
+	EXEEXT := .exe
+else
+	UNAME_S := $(shell uname -s 2>/dev/null)
+	ifneq (,$(findstring Linux,$(UNAME_S)))
+		CFLAGS += -Ofast -march=native -mavx2
+	endif
+	ifneq (,$(findstring Darwin,$(UNAME_S)))
+		# macOS: don't use -march=native/-mavx2 by default
+		CFLAGS += -Ofast
+	endif
+	EXEEXT :=
+endif
+
+# Optional: enable save-temp flags only when using gcc
+SAVE_TEMP_FLAGS :=
+ifneq (,$(findstring gcc,$(shell $(CC) --version 2>/dev/null)))
+	SAVE_TEMP_FLAGS := -save-temps -fverbose-asm $(CFLAGS)
+endif
+
+SRCS := src/main.c
+GEN_SRCS := src/Generator/generate_lookup_table.c
+
+.PHONY: all clean
+
+all: main$(EXEEXT) generator$(EXEEXT)
+
+main$(EXEEXT): $(SRCS)
+	$(CC) $(CFLAGS) -o $@ $^
+
+generator$(EXEEXT): $(GEN_SRCS)
+	$(CC) $(CFLAGS) -o $@ $^
