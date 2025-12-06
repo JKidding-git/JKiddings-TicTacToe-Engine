@@ -34,22 +34,10 @@ bool isPositionLegal() {
     // Move count must be either equal (O to move) or X has exactly one more move
     if (!(x_count == o_count || x_count == o_count + 1)) return false;
 
-    // Winning masks for 3x3 Tic-Tac-Toe (bits 0..8)
-    const int wins[8] = {
-        (1 << 0) | (1 << 1) | (1 << 2), // row 0
-        (1 << 3) | (1 << 4) | (1 << 5), // row 1
-        (1 << 6) | (1 << 7) | (1 << 8), // row 2
-        (1 << 0) | (1 << 3) | (1 << 6), // col 0
-        (1 << 1) | (1 << 4) | (1 << 7), // col 1
-        (1 << 2) | (1 << 5) | (1 << 8), // col 2
-        (1 << 0) | (1 << 4) | (1 << 8), // diag
-        (1 << 2) | (1 << 4) | (1 << 6)  // anti-diag
-    };
-
     bool x_win = false, o_win = false;
     for (int i = 0; i < 8; ++i) {
-        if ((player[X] & wins[i]) == wins[i]) x_win = true;
-        if ((player[O] & wins[i]) == wins[i]) o_win = true;
+        x_win = is_winner(player[X]);
+        o_win = is_winner(player[O]);
     }
 
     // Both players can't win simultaneously
