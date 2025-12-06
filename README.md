@@ -103,7 +103,7 @@ src/
   lookup_table.h    # lookup_table decode & initialization, INCBIN integration
   INCBIN/           # incbin helper for embedding binary data
   Generator/        # generator for `lookup_table.bin`
-  lookup_table/     # data folder; `lookup_table.bin` stored here
+  LookupTable/      # data folder; `lookup_table.bin` stored here
 ```
 
 How to contribute
