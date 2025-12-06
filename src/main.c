@@ -31,9 +31,25 @@ int self_play(const bool show_moves, int moves_this_game, const bool debug_mode)
         }
 
         int move = lookup_table_move;
+        int played_player = current_player;
+        // Validate the AI move. If it's invalid, pick the first legal move.
+        bool moved = false;
+        if (move >= 0 && move <= 8) {
+            moved = place(move);
+        }
 
-        if (debug_mode) printf("Player %c plays at position %d\n", (current_player == X) ? 'X' : 'O', move);
-        place(move);
+        if (!moved) {
+            // Fallback: choose first available legal move
+            for (int i = 0; i < 9; ++i) {
+                if (place(i)) {
+                    move = i;
+                    moved = true;
+                    break;
+                }
+            }
+        }
+
+        if (debug_mode) printf("Player %c plays at position %d\n", (played_player == X) ? 'X' : 'O', moved ? move : -1);
         ++moves_this_game;
     }
     return moves_this_game;
@@ -125,8 +141,21 @@ void pva(bool human_as, bool bot_thinks, double bot_thinking_time) {
             }
 
             int move = lookup_table_move;
-            printf("Player O plays at position %d\n", move);
-            place(move);
+            int played_player = current_player;
+            bool moved = false;
+            if (move >= 0 && move <= 8) {
+                moved = place(move);
+            }
+            if (!moved) {
+                for (int i = 0; i < 9; ++i) {
+                    if (place(i)) {
+                        move = i;
+                        moved = true;
+                        break;
+                    }
+                }
+            }
+            printf("Player %c plays at position %d\n", (played_player == X) ? 'X' : 'O', moved ? move : -1);
 
             // swap back to human
             human_as = X;

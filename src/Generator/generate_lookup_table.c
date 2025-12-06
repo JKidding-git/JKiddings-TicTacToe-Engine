@@ -6,6 +6,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#define INVALID_MOVE 15
+#define INF 32000
+
 // Representation for encoded lookup_table entry
 struct TTTlookup_table {
     // Explanation:
@@ -18,27 +21,25 @@ struct TTTlookup_table {
     // encoded_result: stored as (board << 5) | (player << 4) | best_move
     int encoded_result;
 };
-// lookup_table table exported
-extern struct TTTlookup_table lookup_table[TTT_NODE_SIZE];
 
 // lookup_table table global definition
 struct TTTlookup_table lookup_table[TTT_NODE_SIZE];
 
-bool isPositionLegal() {
+bool is_position_legal() {
+
+    // Count bits for each player
     int x_count = __builtin_popcount(player[X]);
     int o_count = __builtin_popcount(player[O]);
+
+    // Check for winners
+    bool x_win = is_winner(player[X]);
+    bool o_win = is_winner(player[O]);
 
     // Players cannot occupy the same square
     if (player[X] & player[O]) return false;
 
     // Move count must be either equal (O to move) or X has exactly one more move
     if (!(x_count == o_count || x_count == o_count + 1)) return false;
-
-    bool x_win = false, o_win = false;
-    for (int i = 0; i < 8; ++i) {
-        x_win = is_winner(player[X]);
-        o_win = is_winner(player[O]);
-    }
 
     // Both players can't win simultaneously
     if (x_win && o_win) return false;
@@ -52,70 +53,39 @@ bool isPositionLegal() {
     return true;
 }
 
-int negamax(int depth, int alpha, int beta) {
-    int prev_player = (current_player == X) ? O : X;
-    
+int best_indices[9] = {0};
+
+int alphabeta(int depth, int alpha, int beta) {
+
     // Check if the previous move resulted in a win
-    if (is_winner(player[prev_player])) {
-        return -100 + depth; // Loss for current_player
-    }
+    if (is_winner(player[!current_player])) return -100 + depth; // Loss for current_player
     
     // Check for draw
-    if (is_Draw()) {
-        return 0;
-    }
-
-    int best_score = -1000;
+    if (is_Draw()) return 0;
     
     for (int i = 0; i < 9; i++) {
         if (place(i)) {
-            int score = -negamax(depth + 1, -beta, -alpha);
+            int score = -alphabeta(depth + 1, -beta, -alpha);
             unplace(i);
 
-            if (score > best_score) {
-                best_score = score;
-            }
             if (score > alpha) {
                 alpha = score;
+                best_indices[depth] = i;
             }
-            if (alpha >= beta) {
-                break; // Alpha-beta pruning
-            }
+            if (alpha >= beta) break; // Beta cut-off
         }
     }
     
     // If no moves were possible (should be caught by is_Draw, but just in case)
-    if (best_score == -1000) return 0;
+    if (alpha == -INF) return 0;
 
-    return best_score;
-}
-
-int get_best_move() {
-    int best_val = -10000;
-    int best_move = -1;
-    
-    // If game is already over, return -1
-    if (is_winner(player[X]) || is_winner(player[O]) || is_Draw()) {
-        return -1;
-    }
-
-    for (int i = 0; i < 9; i++) {
-        if (place(i)) {
-            int val = -negamax(0, -10000, 10000);
-            unplace(i);
-            
-            if (val > best_val) {
-                best_val = val;
-                best_move = i;
-            }
-        }
-    }
-    return best_move;
+    return alpha;
 }
 
 
 // Pack the fields into 20 bits
 int encode_to_lookup_table(int board_encoded, int current_player, int best_index) {
+
     // Make sure values fit their bit ranges
     board_encoded   &= 0x7FFF; // 15 bits
     current_player  &= 0x1;    // 1 bit
@@ -135,11 +105,12 @@ void generate_lookup_table() {
         int o_count = __builtin_popcount(player[O]);
         current_player = (x_count == o_count) ? X : O;
 
-        int best_move = 0xF; // 15 (invalid/none)
+        int best_move = INVALID_MOVE; // 15 (invalid/none)
 
-        if (isPositionLegal()) {
+        if (is_position_legal()) {
             if (!is_winner(player[X]) && !is_winner(player[O]) && !is_Draw()) {
-                int move = get_best_move();
+                alphabeta(0, -INF, INF);
+                int move = best_indices[0];
                 if (move != -1) best_move = move;
                 generated_entries++;
             }
