@@ -12,11 +12,11 @@
 // Representation for encoded lookup_table entry
 struct TTTlookup_table {
     // Explanation:
-    // B = board_encoded (15 bits) (0-32767)
-    // P = current_player (1 bit) (0 or 1)
-    // M = best_index (4 bits) (0-15, where 15 means
-    // This means: BBBBBBBBBBBBBBBPMMMM
-    // Total: 20 bits (uint32_t or int.)
+    //   - B = board_encoded (15 bits) (0-32767)
+    //   - P = current_player (1 bit) (0 or 1)
+    //   - M = best_index (4 bits) (0-15, where 15 means
+    //   - This means: BBBBBBBBBBBBBBBPMMMM
+    //   - Total: 20 bits (uint32_t or int.)
 
     // encoded_result: stored as (board << 5) | (player << 4) | best_move
     int encoded_result;
@@ -57,10 +57,8 @@ int best_indices[9] = {0};
 
 int alphabeta(int depth, int alpha, int beta) {
 
-    // Check if the previous move resulted in a win
+    // Terminal conditions.
     if (is_winner(player[!current_player])) return -100 + depth; // Loss for current_player
-    
-    // Check for draw
     if (is_Draw()) return 0;
     
     for (int i = 0; i < 9; i++) {
@@ -75,16 +73,13 @@ int alphabeta(int depth, int alpha, int beta) {
             if (alpha >= beta) break; // Beta cut-off
         }
     }
-    
-    // If no moves were possible (should be caught by is_Draw, but just in case)
-    if (alpha == -INF) return 0;
 
     return alpha;
 }
 
 
 // Pack the fields into 20 bits
-int encode_to_lookup_table(int board_encoded, int current_player, int best_index) {
+int encode_to_lookup_table(uint16_t board_encoded, bool current_player, uint8_t best_index) {
 
     // Make sure values fit their bit ranges
     board_encoded   &= 0x7FFF; // 15 bits
@@ -97,6 +92,7 @@ int encode_to_lookup_table(int board_encoded, int current_player, int best_index
 
 void generate_lookup_table() {
     int generated_entries = 0;
+
     printf("Generating lookup_table Table...\n");
     for (int i = 0; i < TTT_NODE_SIZE; i++) {
         decode_board(i);
@@ -108,10 +104,13 @@ void generate_lookup_table() {
         int best_move = INVALID_MOVE; // 15 (invalid/none)
 
         if (is_position_legal()) {
+
+            // Clear old data
+            for (int j = 0; j < 9; j++) best_indices[j] = -1;
+
             if (!is_winner(player[X]) && !is_winner(player[O]) && !is_Draw()) {
                 alphabeta(0, -INF, INF);
-                int move = best_indices[0];
-                if (move != -1) best_move = move;
+                if (best_indices[0] != -1) best_move = best_indices[0];
                 generated_entries++;
             }
         }
@@ -119,29 +118,26 @@ void generate_lookup_table() {
         lookup_table[i].encoded_result = encode_to_lookup_table(i, current_player, best_move);
     }
 
-    size_t size = sizeof(lookup_table->encoded_result) * TTT_NODE_SIZE;
-    size_t entries = size / sizeof(struct TTTlookup_table);
-    double kilobytes = size / 1024.0;
-    printf("Generated %.2f KB for %zu entries.\n", kilobytes, entries);
+    printf("Generated %.5f KB for %d entries.\n", sizeof(lookup_table) / 1024.0, TTT_NODE_SIZE);
 
     // saving to file: lookup_table.bin
     FILE *f = fopen("src/LookupTable/lookup_table.bin", "wb");
-    if (f == NULL) {
-        perror("Failed to open src/LookupTable/lookup_table.bin for writing");
+    if (!f) {
+        printf("Error: Could not open file for writing lookup_table data.\n");
         exit(EXIT_FAILURE);
-    } else {
-        size_t written = fwrite(lookup_table, sizeof(struct TTTlookup_table), TTT_NODE_SIZE, f);
-        if (written != TTT_NODE_SIZE) {
-            perror("Failed to write complete lookup_table table to file");
-            fclose(f);
-            exit(EXIT_FAILURE);
-        }
-        fclose(f);
     }
+
+    // Write the entire lookup_table array to the file
+    size_t written = fwrite(lookup_table, sizeof(struct TTTlookup_table), TTT_NODE_SIZE, f);
+    if (written != TTT_NODE_SIZE) {
+        printf("Error: Could not write all lookup_table data to file.\n");
+        fclose(f);
+        exit(EXIT_FAILURE);
+    }
+    fclose(f);
 
     printf("lookup_table Generated with %d entries.\n", generated_entries);
 }
-
 
 int main() {
     generate_lookup_table();
