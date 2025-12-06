@@ -12,7 +12,7 @@ This project exists because of me trying to learn bit packing for the first time
 
 Quick features
 --------------
-- Generate a lookup_table and save it to `src/lookup_table/lookup_table.bin`.
+- Generate a lookup_table and save it to `src/LookupTable/lookup_table.bin`.
 - Embed the binary lookup_table into `main` using `incbin`.
 - Play modes: human vs AI, self-play (AI vs AI), and benchmarking.
 - Small, readable code: `ttt.h` holds the board logic; `lookup_table.h` handles decoding/loading the lookup_table.
@@ -28,9 +28,9 @@ make
 This should produce two executables:
 
 - `main` — the Tic-Tac-Toe runtime engine that loads the embedded lookup_table and runs the requested mode.
-- `generator` — the special program that generates `src/lookup_table/lookup_table.bin` (used if you want to regenerate the lookup_table).
+- `generator` — the special program that generates `src/LookupTable/lookup_table.bin` (used if you want to regenerate the lookup_table).
 
-If `src/lookup_table/lookup_table.bin` is missing or you want to regenerate it, run:
+If `src/LookupTable/lookup_table.bin` is missing or you want to regenerate it, run:
 
 ```bash
 ./generator
@@ -81,7 +81,7 @@ Implementation details
   - 1 bit: current player to move (0/1)
   - 4 bits: best move index (0–8) or `0xF` to indicate invalid/none
 
-- At runtime, `init_lookup_table()` in `src/lookup_table.h` reads `src/lookup_table/lookup_table.bin` (embedded using `INCBIN`) and decodes each 32-bit entry into a `TTTDecoded` structure:
+- At runtime, `init_lookup_table()` in `src/lookup_table.h` reads `src/LookupTable/lookup_table.bin` (embedded using `INCBIN`) and decodes each 32-bit entry into a `TTTDecoded` structure:
   - `uint16_t board_encoded` — 15-bit board index
   - `bool current_player` — who moves
   - `uint8_t best_index` — best move (0–8) or 0xF
