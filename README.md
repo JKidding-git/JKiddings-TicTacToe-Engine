@@ -27,8 +27,8 @@ make
 
 This should produce two executables:
 
-- `main` — the Tic-Tac-Toe runtime engine that loads the embedded lookup_table and runs the requested mode.
-- `generator` — the special program that generates `src/LookupTable/lookup_table.bin` (used if you want to regenerate the lookup_table).
+- `main` - the Tic-Tac-Toe runtime engine that loads the embedded lookup_table and runs the requested mode.
+- `generator` - the special program that generates `src/LookupTable/lookup_table.bin` (used if you want to regenerate the lookup_table).
 
 If `src/LookupTable/lookup_table.bin` is missing or you want to regenerate it, run:
 
@@ -48,10 +48,10 @@ From the repository root (after building):
 
 Common commands:
 
-- `./main --benchmark [--seconds N]` — Run a CPU benchmark that plays full game simulations for N seconds (default 1.0). Shows games/sec and average moves per game.
-- `./main --selfplay` — Let the lookup_table play both sides and print moves until the game completes.
-- `./main --pva [X|O] [--bot-thinks] [--thinking-time N]` — Play against the AI (pick human side X or O). `--bot-thinks` simulates a delay; `--thinking-time N` sets time per move.
-- `./main --credits` — Show credits and info.
+- `./main --benchmark [--seconds N]` - Run a CPU benchmark that plays full game simulations for N seconds (default 1.0). Shows games/sec and average moves per game.
+- `./main --selfplay` - Let the lookup_table play both sides and print moves until the game completes.
+- `./main --pva [X|O] [--bot-thinks] [--thinking-time N]` - Play against the AI (pick human side X or O). `--bot-thinks` simulates a delay; `--thinking-time N` sets time per move.
+- `./main --credits` - Show credits and info.
 
 Controls and board layout
 -------------------------
@@ -82,9 +82,9 @@ Implementation details
   - 4 bits: best move index (0–8) or `0xF` to indicate invalid/none
 
 - At runtime, `init_lookup_table()` in `src/lookup_table.h` reads `src/LookupTable/lookup_table.bin` (embedded using `INCBIN`) and decodes each 32-bit entry into a `TTTDecoded` structure:
-  - `uint16_t board_encoded` — 15-bit board index
-  - `bool current_player` — who moves
-  - `uint8_t best_index` — best move (0–8) or 0xF
+  - `uint16_t board_encoded` - 15-bit board index
+  - `bool current_player` - who moves
+  - `uint8_t best_index` - best move (0–8) or 0xF
 
 Notes
 -----
@@ -115,4 +115,4 @@ If you want to contribute:
 
 Credits
 -------
-This project was authored by JKidding (see credits).
+This project is created by JKidding.

@@ -1,6 +1,8 @@
 # Portable Makefile — works on Linux, macOS, Windows (make under MSYS/MinGW/Cygwin)
 CC ?= gcc
 CFLAGS ?= -O2
+what_avx_is_this_os := $(shell grep -m1 -o 'avx2\|avx' /proc/cpuinfo 2>/dev/null)
+
 
 # Detect OS to set executable extension and add aggressive flags on Unix-like systems
 ifeq ($(OS),Windows_NT)
@@ -8,7 +10,12 @@ ifeq ($(OS),Windows_NT)
 else
 	UNAME_S := $(shell uname -s 2>/dev/null)
 	ifneq (,$(findstring Linux,$(UNAME_S)))
-		CFLAGS += -Ofast -march=native -mavx2
+		ifneq (,$(findstring avx2,$(what_avx_is_this_os)))
+			CFLAGS += -mavx2
+		else ifneq (,$(findstring avx,$(what_avx_is_this_os)))
+			CFLAGS += -mavx
+		endif
+		CFLAGS += -Ofast -march=native
 	endif
 	ifneq (,$(findstring Darwin,$(UNAME_S)))
 		# macOS: don't use -march=native/-mavx2 by default

@@ -13,12 +13,22 @@
 #include <time.h>
 
 // This is just to remove code duplication from the benchmark and self-play modes.
-int self_play(const bool show_moves, int moves_this_game, const bool debug_mode) {
+int self_play(int moves_this_game) {
     while (true) {
-        if (show_moves) print_board();
+        print_board();
 
         if (is_Draw()) {
-            if (debug_mode) printf("It's a draw!\n");
+            printf("It's a draw!\n");
+            break;
+        }
+
+        if (is_winner(player[X])) {
+            printf("Something is broken with the Lookup Table: PXW. \n");
+            break;
+        }
+
+        if (is_winner(player[O])) {
+            printf("Something is broken with the Lookup Table: POW. \n");
             break;
         }
 
@@ -32,24 +42,39 @@ int self_play(const bool show_moves, int moves_this_game, const bool debug_mode)
 
         int move = lookup_table_move;
         int played_player = current_player;
-        // Validate the AI move. If it's invalid, pick the first legal move.
-        bool moved = false;
-        if (move >= 0 && move <= 8) {
-            moved = place(move);
-        }
-
+        
+        bool moved = place(move);
         if (!moved) {
-            // Fallback: choose first available legal move
-            for (int i = 0; i < 9; ++i) {
-                if (place(i)) {
-                    move = i;
-                    moved = true;
-                    break;
-                }
-            }
+            printf("Self-play Error: Invalid move by player %c at position %d\n", (played_player == X) ? 'X' : 'O', move);
+            break;
         }
 
-        if (debug_mode) printf("Player %c plays at position %d\n", (played_player == X) ? 'X' : 'O', moved ? move : -1);
+        printf("Player %c plays at position %d\n", (played_player == X) ? 'X' : 'O', moved ? move : -1);
+        ++moves_this_game;
+    }
+    return moves_this_game;
+}
+
+int self_play_benchmark(int moves_this_game) {
+    while (true) {
+        if (is_Draw()) break;
+
+        int lookup_table_move = -1;
+        int board_idx = encode_board();
+        TTTDecoded dec = lookup_table[board_idx];
+
+        if (dec.current_player == current_player && dec.best_index <= 8) {
+            lookup_table_move = dec.best_index;
+        }
+
+        int move = lookup_table_move;
+        int played_player = current_player;
+        
+        // check move validity
+        if (!place(move)) {
+            printf("Benchmark Error: Invalid move by player %c at position %d\n", (played_player == X) ? 'X' : 'O', move);
+            break;
+        }
         ++moves_this_game;
     }
     return moves_this_game;
@@ -69,12 +94,11 @@ void Benchmark(double target_seconds) {
     while (((double)(clock() - bench_start) / CLOCKS_PER_SEC) < target_seconds) {
         // reset game state
         current_player = X;
-        board = 0;
         player[X] = player[O] = 0;
         int moves_this_game = 0;
 
         // play out a full game (same logic as the interactive mode)
-        moves_this_game = self_play(false, moves_this_game, false);
+        moves_this_game = self_play_benchmark(moves_this_game);
 
         ++games_completed;
         total_moves += moves_this_game;
@@ -250,7 +274,7 @@ void parse_args(int argc, char **argv) {
 
     // Self-play mode (explicit flag only)
     if (argc > 1 && strcmp(argv[1], "--selfplay") == 0) {
-        self_play(true, 0, true);
+        self_play(0);
         exit(0);
     }
 
@@ -286,6 +310,7 @@ void parse_args(int argc, char **argv) {
 // screw this, this shit took me 10 hours. I need a break.
 int main(int argc, char **argv) {
     init_lookup_table(); // load lookup_table table from embedded binary
+    // init_decode_table();
     parse_args(argc, argv);
     return 0;
 }

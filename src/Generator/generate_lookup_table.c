@@ -25,6 +25,17 @@ struct TTTlookup_table {
 // lookup_table table global definition
 struct TTTlookup_table lookup_table[TTT_NODE_SIZE];
 
+// Pack the fields into 20 bits
+int encode_to_lookup_table(uint16_t board_encoded, bool current_player, uint8_t best_index) {
+
+    // Make sure values fit their bit ranges
+    board_encoded   &= 0x7FFF; // 15 bits
+    current_player  &= 0x1;    // 1 bit
+    best_index      &= 0xF;    // 4 bits
+
+    return (board_encoded << 5) | (current_player << 4) | best_index;
+}
+
 bool is_position_legal() {
 
     // Count bits for each player
@@ -55,20 +66,21 @@ bool is_position_legal() {
 
 int best_indices[9] = {0};
 
-int alphabeta(int depth, int alpha, int beta) {
+int alphabeta(int ply, int alpha, int beta) {
 
-    // Terminal conditions.
-    if (is_winner(player[!current_player])) return -100 + depth; // Loss for current_player
-    if (is_Draw()) return 0;
+    if (is_winner(player[current_player]))  return INF - ply;  // Winning position for current player
+    if (is_winner(player[!current_player])) return -INF + ply; // Losing position for current player
+    if (is_Draw()) return 0;                                   // Draw
     
     for (int i = 0; i < 9; i++) {
         if (place(i)) {
-            int score = -alphabeta(depth + 1, -beta, -alpha);
+            int score = -alphabeta(ply + 1, -beta, -alpha);
             unplace(i);
 
             if (score > alpha) {
                 alpha = score;
-                best_indices[depth] = i;
+
+                best_indices[ply] = i;
             }
             if (alpha >= beta) break; // Beta cut-off
         }
@@ -76,19 +88,6 @@ int alphabeta(int depth, int alpha, int beta) {
 
     return alpha;
 }
-
-
-// Pack the fields into 20 bits
-int encode_to_lookup_table(uint16_t board_encoded, bool current_player, uint8_t best_index) {
-
-    // Make sure values fit their bit ranges
-    board_encoded   &= 0x7FFF; // 15 bits
-    current_player  &= 0x1;    // 1 bit
-    best_index      &= 0xF;    // 4 bits
-
-    return (board_encoded << 5) | (current_player << 4) | best_index;
-}
-
 
 void generate_lookup_table() {
     int generated_entries = 0;
