@@ -105,14 +105,3 @@ src/
   Generator/        # generator for `lookup_table.bin`
   LookupTable/      # data folder; `lookup_table.bin` stored here
 ```
-
-How to contribute
-------------------
-If you want to contribute:
-1. Fork and create a branch for your feature or fix.
-2. Be sure to re-run `./generator` if you change generation logic and then `make` to rebuild.
-3. Add tests or example builds if you change core logic.
-
-Credits
--------
-This project is created by JKidding.
